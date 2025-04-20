@@ -12,6 +12,7 @@ dependencies = [
     "langgraph>=0.3.18",
     "pydantic>=2.10.6",
     "python-dotenv>=1.1.0",
+    "uptime-kuma-mcp-server>=0.1.15",
 ]
 
 [tool.hatch.build.targets.wheel]
