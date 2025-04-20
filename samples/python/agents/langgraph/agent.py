@@ -7,11 +7,37 @@ from typing import Any, Dict, AsyncIterable, Literal
 from pydantic import BaseModel
 import logging
 import traceback
+import asyncio
+import functools
 
 # 导入uptime-kuma-mcp-server工具
-from uptime_kuma_mcp_server.server import add_monitors, get_monitors, delete_monitors
+from uptime_kuma_mcp_server.server import add_monitors as async_add_monitors
+from uptime_kuma_mcp_server.server import get_monitors as async_get_monitors
+from uptime_kuma_mcp_server.server import delete_monitors as async_delete_monitors
 
 memory = MemorySaver()
+
+
+# 创建同步包装函数
+def sync_wrapper(async_func):
+    """将异步函数包装为同步函数"""
+
+    @functools.wraps(async_func)  # 保留原函数的文档字符串和签名
+    def wrapper(*args, **kwargs):
+        try:
+            logger.info(f"调用同步包装函数: {async_func.__name__}")
+            return asyncio.run(async_func(*args, **kwargs))
+        except Exception as e:
+            logger.error(f"同步包装函数执行失败: {str(e)}")
+            raise
+
+    return wrapper
+
+
+# 创建同步版本的工具函数
+add_monitors = sync_wrapper(async_add_monitors)
+get_monitors = sync_wrapper(async_get_monitors)
+delete_monitors = sync_wrapper(async_delete_monitors)
 
 
 class ResponseFormat(BaseModel):
