@@ -2,7 +2,7 @@ from common.server import A2AServer
 from common.types import AgentCard, AgentCapabilities, AgentSkill, MissingAPIKeyError
 from common.utils.push_notification_auth import PushNotificationSenderAuth
 from agents.langgraph.task_manager import AgentTaskManager
-from agents.langgraph.agent import CurrencyAgent
+from agents.langgraph.agent import MonitorAgent
 import click
 import os
 import logging
@@ -13,30 +13,35 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @click.command()
 @click.option("--host", "host", default="localhost")
 @click.option("--port", "port", default=10000)
 def main(host, port):
-    """Starts the Currency Agent server."""
+    """Starts the Monitor Agent server."""
     try:
         if not os.getenv("GOOGLE_API_KEY"):
             raise MissingAPIKeyError("GOOGLE_API_KEY environment variable not set.")
 
         capabilities = AgentCapabilities(streaming=True, pushNotifications=True)
         skill = AgentSkill(
-            id="convert_currency",
-            name="Currency Exchange Rates Tool",
-            description="Helps with exchange values between various currencies",
-            tags=["currency conversion", "currency exchange"],
-            examples=["What is exchange rate between USD and GBP?"],
+            id="website_monitoring",
+            name="Website Monitoring Tool",
+            description="Helps with managing website monitoring using Uptime Kuma",
+            tags=["website monitoring", "status"],
+            examples=[
+                "Add monitor for https://example.com",
+                "List all my monitors",
+                "Delete monitor with ID 5",
+            ],
         )
         agent_card = AgentCard(
-            name="Currency Agent",
-            description="Helps with exchange rates for currencies",
+            name="Monitor Agent",
+            description="Helps with managing website monitoring using Uptime Kuma",
             url=f"http://{host}:{port}/",
             version="1.0.0",
-            defaultInputModes=CurrencyAgent.SUPPORTED_CONTENT_TYPES,
-            defaultOutputModes=CurrencyAgent.SUPPORTED_CONTENT_TYPES,
+            defaultInputModes=MonitorAgent.SUPPORTED_CONTENT_TYPES,
+            defaultOutputModes=MonitorAgent.SUPPORTED_CONTENT_TYPES,
             capabilities=capabilities,
             skills=[skill],
         )
@@ -45,13 +50,17 @@ def main(host, port):
         notification_sender_auth.generate_jwk()
         server = A2AServer(
             agent_card=agent_card,
-            task_manager=AgentTaskManager(agent=CurrencyAgent(), notification_sender_auth=notification_sender_auth),
+            task_manager=AgentTaskManager(
+                agent=MonitorAgent(), notification_sender_auth=notification_sender_auth
+            ),
             host=host,
             port=port,
         )
 
         server.app.add_route(
-            "/.well-known/jwks.json", notification_sender_auth.handle_jwks_endpoint, methods=["GET"]
+            "/.well-known/jwks.json",
+            notification_sender_auth.handle_jwks_endpoint,
+            methods=["GET"],
         )
 
         logger.info(f"Starting server on {host}:{port}")

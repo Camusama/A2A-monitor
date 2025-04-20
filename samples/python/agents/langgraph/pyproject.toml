@@ -1,9 +1,8 @@
 [project]
 name = "a2a-sample-agent-langgraph"
 version = "0.1.0"
-description = "Sample LangGraph currency ggent with A2A Protocol"
-readme = "README.md"
-requires-python = ">=3.12"
+description = "LangGraph Agent"
+requires-python = ">=3.10"
 dependencies = [
     "a2a-samples",
     "click>=8.1.8",
